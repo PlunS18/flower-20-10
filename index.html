@@ -881,10 +881,19 @@
         </select>
       </div>
 
-      <!-- 4. Link quà tặng tạo tự động theo thời gian thực -->
+      <!-- 4. Giai điệu âm nhạc trong thiệp -->
+      <div class="config-group">
+        <label class="config-label">4. Giai điệu âm nhạc trong thiệp</label>
+        <select id="cfg-music-input" class="config-input">
+          <option value="giai_cuu_the_gioi" selected>🎵 Có Phải Anh Đã Cứu Thế Giới (Lãng mạn - Người yêu / Vợ)</option>
+          <option value="me_yeu">👩 Mẹ Yêu x Ước Mơ Của Mẹ (Tình cảm, xúc động - Dành cho Mẹ)</option>
+        </select>
+      </div>
+
+      <!-- 5. Link quà tặng tạo tự động theo thời gian thực -->
       <div class="config-group" style="margin-top: 1.1rem; background: rgba(245, 208, 133, 0.08); border: 1px solid rgba(245, 208, 133, 0.35); border-radius: 14px; padding: 12px 14px;">
         <label class="config-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-          <span>4. Link quà tặng tạo riêng:</span>
+          <span>5. Link quà tặng tạo riêng:</span>
           <span style="font-size: 0.72rem; color: #a69ebd; text-transform: none;">(Tự cập nhật khi gõ tên)</span>
         </label>
         <div style="display: flex; gap: 8px;">
@@ -942,6 +951,7 @@
       recipient: "Thư",
       wishes: PRESET_WISHES.lover,
       flowerModel: "user_lily_bouquet",
+      audioTrack: "giai_cuu_the_gioi",
       isRecipientView: false
     };
 
@@ -1907,13 +1917,39 @@
     animateCanvas();
 
     /* ==========================================================
-       5. PHÁT BÀI HÁT: GIẢI CỨU THẾ GIỚI
+       5. PHÁT BÀI HÁT & QUẢN LÝ GIAI ĐIỆU
     ========================================================== */
+    const AUDIO_TRACKS = {
+      giai_cuu_the_gioi: {
+        title: 'Có Phải Anh Đã Cứu Cả Thế Giới',
+        url: 'giai_cuu_the_gioi.m4a'
+      },
+      me_yeu: {
+        title: 'Mẹ Yêu x Ước Mơ Của Mẹ',
+        url: 'me_yeu.m4a'
+      }
+    };
+
     let audioCtx = null;
     let isPlaying = false;
-    const bgAudio = new Audio('giai_cuu_the_gioi.m4a');
+    const bgAudio = new Audio(AUDIO_TRACKS.giai_cuu_the_gioi.url);
     bgAudio.loop = true;
     bgAudio.volume = 0.85;
+
+    function setMusicTrack(trackKey, autoPlayIfPlaying = false) {
+      if (!AUDIO_TRACKS[trackKey]) trackKey = 'giai_cuu_the_gioi';
+      state.audioTrack = trackKey;
+      const track = AUDIO_TRACKS[trackKey];
+      const wasPlaying = isPlaying;
+      if (!bgAudio.src.endsWith(track.url)) {
+        bgAudio.src = track.url;
+        if (wasPlaying || autoPlayIfPlaying) {
+          bgAudio.play().catch(e => console.log('Audio playback gesture wait:', e));
+        }
+      }
+      const cfgMusic = document.getElementById('cfg-music-input');
+      if (cfgMusic) cfgMusic.value = trackKey;
+    }
 
     function initAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2006,6 +2042,8 @@
       cfgWishesInput.value = state.wishes;
       const cfgFlower = document.getElementById('cfg-flower-input');
       if (cfgFlower) cfgFlower.value = state.flowerModel;
+      const cfgMusic = document.getElementById('cfg-music-input');
+      if (cfgMusic) cfgMusic.value = state.audioTrack || 'giai_cuu_the_gioi';
       updateLiveShareLink();
       renderSavedCards();
       configModal.classList.add('open');
@@ -2033,6 +2071,11 @@
         if (PRESET_WISHES[preset]) {
           cfgWishesInput.value = PRESET_WISHES[preset];
           state.wishes = PRESET_WISHES[preset];
+          if (preset === 'mother') {
+            setMusicTrack('me_yeu');
+          } else if (preset === 'lover') {
+            setMusicTrack('giai_cuu_the_gioi');
+          }
           updateLiveShareLink();
         }
       });
@@ -2062,6 +2105,8 @@
       const wishes = (cfgWishesInput.value || '').trim() || PRESET_WISHES.lover;
       const cfgFlower = document.getElementById('cfg-flower-input');
       const flower = cfgFlower ? cfgFlower.value : 'user_lily_bouquet';
+      const cfgMusic = document.getElementById('cfg-music-input');
+      const music = cfgMusic ? cfgMusic.value : (state.audioTrack || 'giai_cuu_the_gioi');
 
       let basePath = window.location.pathname.replace(/\/(studio|index)\.html.*$/i, '/');
       if (!basePath.endsWith('/')) basePath += '/';
@@ -2073,6 +2118,9 @@
       }
       if (flower && flower !== 'user_lily_bouquet') {
         url.searchParams.set('flower', flower);
+      }
+      if (music && music !== 'giai_cuu_the_gioi') {
+        url.searchParams.set('music', music);
       }
       return url.toString();
     }
@@ -2101,6 +2149,8 @@
       const wishes = (cfgWishesInput.value || '').trim() || PRESET_WISHES.lover;
       const cfgFlower = document.getElementById('cfg-flower-input');
       const flower = cfgFlower ? cfgFlower.value : 'user_lily_bouquet';
+      const cfgMusic = document.getElementById('cfg-music-input');
+      const music = cfgMusic ? cfgMusic.value : (state.audioTrack || 'giai_cuu_the_gioi');
       const shareUrl = calculateCurrentShareURL();
 
       let cards = getSavedCards();
@@ -2109,6 +2159,7 @@
         recipient,
         wishes,
         flowerModel: flower,
+        audioTrack: music,
         url: shareUrl,
         time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
       });
@@ -2135,7 +2186,7 @@
         <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 10px; font-size: 0.8rem; gap: 8px;">
           <div style="cursor: pointer; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="window.loadSavedCard(${idx})">
             <strong style="color: #ffd166;">💐 ${escapeHtml(c.recipient)}</strong>
-            <span style="color: #a69ebd; font-size: 0.72rem; margin-left: 4px;">(${c.flowerModel === 'flowers_bouquet' ? 'Hoa đa sắc' : 'Hoa ly'})</span>
+            <span style="color: #a69ebd; font-size: 0.72rem; margin-left: 4px;">(${c.flowerModel === 'flowers_bouquet' ? 'Hoa đa sắc' : 'Hoa ly'} • ${c.audioTrack === 'me_yeu' ? 'Mẹ Yêu' : 'Lãng mạn'})</span>
           </div>
           <div style="display: flex; gap: 6px; align-items: center;">
             <button class="pill-btn primary" type="button" style="padding: 3px 8px; font-size: 0.72rem;" onclick="window.copySavedCardLink(${idx})">Copy Link</button>
@@ -2162,6 +2213,9 @@
       state.recipient = card.recipient;
       state.wishes = card.wishes;
       state.flowerModel = card.flowerModel;
+      if (card.audioTrack) {
+        setMusicTrack(card.audioTrack);
+      }
       updateLiveShareLink();
       showToast(`Đã chọn thiệp gửi tặng ${card.recipient} ✨`);
     };
@@ -2201,6 +2255,10 @@
     });
     document.getElementById('cfg-flower-input')?.addEventListener('change', (e) => {
       state.flowerModel = e.target.value;
+      updateLiveShareLink();
+    });
+    document.getElementById('cfg-music-input')?.addEventListener('change', (e) => {
+      setMusicTrack(e.target.value);
       updateLiveShareLink();
     });
 
@@ -2246,6 +2304,7 @@
       const toParam = params.get('to');
       const msgParam = params.get('msg');
       const flowerParam = params.get('flower');
+      const musicParam = params.get('music');
 
       // Studio chỉ kích hoạt khi có tham số bí mật: ?studio=1, ?edit=1, ?admin=1 hoặc file studio.html
       const isStudio = params.has('studio') || params.has('edit') || params.has('admin') || params.has('config') || window.location.pathname.includes('studio');
@@ -2253,9 +2312,16 @@
       if (toParam) state.recipient = toParam;
       if (msgParam) state.wishes = msgParam;
       if (flowerParam) state.flowerModel = flowerParam;
+      if (musicParam && AUDIO_TRACKS[musicParam]) {
+        setMusicTrack(musicParam);
+      } else {
+        setMusicTrack(state.audioTrack || 'giai_cuu_the_gioi');
+      }
 
       const cfgFlower = document.getElementById('cfg-flower-input');
       if (cfgFlower) cfgFlower.value = state.flowerModel;
+      const cfgMusic = document.getElementById('cfg-music-input');
+      if (cfgMusic) cfgMusic.value = state.audioTrack;
 
       applyStateToUI();
 
