@@ -2073,8 +2073,16 @@
           state.wishes = PRESET_WISHES[preset];
           if (preset === 'mother') {
             setMusicTrack('me_yeu');
+            if (!cfgRecipientInput.value || cfgRecipientInput.value === 'Thư' || cfgRecipientInput.value === 'Em') {
+              cfgRecipientInput.value = 'Mẹ yêu';
+              state.recipient = 'Mẹ yêu';
+            }
           } else if (preset === 'lover') {
             setMusicTrack('giai_cuu_the_gioi');
+            if (cfgRecipientInput.value === 'Mẹ yêu') {
+              cfgRecipientInput.value = 'Thư';
+              state.recipient = 'Thư';
+            }
           }
           updateLiveShareLink();
         }
