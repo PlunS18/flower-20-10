@@ -1,0 +1,2149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Món Quà 20/10 — Gửi Ngàn Yêu Thương</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/meshopt_decoder.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <style>
+    :root {
+      --bg-dark: #07050d;
+      --gold-primary: #f5d085;
+      --gold-light: #fff3d6;
+      --gold-dim: #997e47;
+      --rose-pink: #ff6b98;
+      --lily-pink: #ff85a1;
+      --glass-bg: rgba(18, 13, 26, 0.75);
+      --glass-border: rgba(245, 208, 133, 0.3);
+      --text-main: #f5f3f7;
+      --text-muted: #a69ebd;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 15%, #24143a 0%, #0e091b 55%, #05040a 100%);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      user-select: none;
+    }
+
+    /* Canvas Fullscreen for Petals & Stardust */
+    #canvas-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Ambient Glow Spots */
+    .aurora-spot {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      z-index: 0;
+      opacity: 0.35;
+      pointer-events: none;
+      animation: pulseAura 8s infinite alternate ease-in-out;
+    }
+
+    .spot-1 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, #e05286, transparent 70%);
+      top: 5%;
+      left: 20%;
+    }
+
+    .spot-2 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, #632d99, transparent 70%);
+      bottom: 5%;
+      right: 15%;
+      animation-delay: -4s;
+    }
+
+    @keyframes pulseAura {
+      0% { transform: scale(0.9) translate(-20px, 10px); opacity: 0.25; }
+      100% { transform: scale(1.15) translate(20px, -15px); opacity: 0.45; }
+    }
+
+    /* Main Container */
+    .main-wrapper {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4.8rem 1.2rem 2rem;
+      box-sizing: border-box;
+      width: 100%;
+    }
+
+    /* Top Floating Navigation */
+    .top-nav {
+      position: fixed;
+      top: 1.25rem;
+      left: 1.25rem;
+      right: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .nav-group {
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    .pill-btn {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      color: var(--gold-light);
+      padding: 0.55rem 1.1rem;
+      border-radius: 9999px;
+      backdrop-filter: blur(16px);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .pill-btn:hover {
+      background: rgba(245, 208, 133, 0.18);
+      border-color: var(--gold-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(245, 208, 133, 0.3);
+    }
+
+    .pill-btn.primary {
+      background: linear-gradient(135deg, #ff4e83 0%, #ff8359 100%);
+      border: none;
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(255, 78, 131, 0.4);
+    }
+
+    .pill-btn.primary:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 6px 28px rgba(255, 78, 131, 0.6);
+    }
+
+    /* MẶC ĐỊNH ẨN NÚT CẤU HÌNH & CHIA SẺ ĐỂ NGƯỜI NHẬN KHÔNG THẤY */
+    #open-config-btn,
+    #share-link-btn {
+      display: none;
+    }
+
+    /* 3D WebGL Bouquet Stage */
+    .flower-stage {
+      position: relative;
+      width: 100%;
+      max-width: 580px;
+      height: 500px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #three-flower-canvas {
+      width: 100%;
+      height: 100%;
+      outline: none;
+      cursor: grab;
+      border-radius: 28px;
+      touch-action: none;
+    }
+
+    #three-flower-canvas:active {
+      cursor: grabbing;
+    }
+
+    .stage-hint {
+      position: absolute;
+      top: 10px;
+      font-size: 0.74rem;
+      letter-spacing: 0.05em;
+      color: var(--gold-primary);
+      background: rgba(14, 9, 24, 0.75);
+      padding: 0.28rem 0.85rem;
+      border-radius: 20px;
+      border: 1px solid rgba(245, 208, 133, 0.25);
+      pointer-events: none;
+      backdrop-filter: blur(8px);
+      animation: pulseHint 2.5s infinite ease-in-out;
+      z-index: 15;
+    }
+
+    /* 3D Flower Loading Indicator */
+    .flower-loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: rgba(18, 12, 28, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(245, 208, 133, 0.35);
+      padding: 18px 26px;
+      border-radius: 22px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), 0 0 25px rgba(255, 107, 152, 0.2);
+      z-index: 25;
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .flower-loading.hidden {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.88);
+      pointer-events: none;
+    }
+
+    .loading-flower-spinner {
+      font-size: 32px;
+      animation: spinBlossom 2.2s infinite ease-in-out;
+      filter: drop-shadow(0 0 10px rgba(255, 133, 161, 0.6));
+    }
+
+    @keyframes spinBlossom {
+      0% { transform: scale(0.9) rotate(0deg); }
+      50% { transform: scale(1.2) rotate(180deg); }
+      100% { transform: scale(0.9) rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 0.82rem;
+      color: var(--gold-light);
+      letter-spacing: 0.5px;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .loading-bar {
+      width: 140px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .loading-bar-fill {
+      width: 15%;
+      height: 100%;
+      background: linear-gradient(90deg, #ff85a1, #f5d085);
+      border-radius: 99px;
+      transition: width 0.25s ease;
+      box-shadow: 0 0 8px rgba(245, 208, 133, 0.6);
+    }
+
+    .flower-selector-bar {
+      position: absolute;
+      bottom: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      z-index: 20;
+      max-width: 95%;
+    }
+
+    .flower-chip {
+      background: rgba(22, 15, 34, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(245, 208, 133, 0.25);
+      color: #e2daf0;
+      padding: 5px 11px;
+      border-radius: 16px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: inherit;
+    }
+
+    .flower-chip:hover {
+      background: rgba(255, 107, 152, 0.25);
+      border-color: var(--rose-pink);
+      color: #fff;
+      transform: translateY(-2px);
+    }
+
+    .flower-chip.active {
+      background: linear-gradient(135deg, #ff4d8d, #f5d085);
+      border-color: #ffd6e4;
+      color: #0b0714;
+      font-weight: 600;
+      box-shadow: 0 4px 14px rgba(255, 77, 141, 0.45);
+      transform: translateY(-2px);
+    }
+
+    @keyframes pulseHint {
+      0%, 100% { opacity: 0.65; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(-3px); }
+    }
+
+    /* =========================================================
+       RECIPIENT EXPERIENCE: LUXURY WAX SEAL ENVELOPE MODAL
+    ========================================================= */
+    #envelope-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(7, 5, 13, 0.92);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    #envelope-screen.opened {
+      opacity: 0;
+      transform: scale(1.1);
+      pointer-events: none;
+    }
+
+    .envelope-box {
+      width: 100%;
+      max-width: 440px;
+      height: 290px;
+      background: linear-gradient(135deg, #1f162e 0%, #140d21 100%);
+      border: 2px solid rgba(245, 208, 133, 0.35);
+      border-radius: 24px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8), 0 0 50px rgba(245, 208, 133, 0.15);
+      cursor: pointer;
+      transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .envelope-box:hover {
+      transform: translateY(-5px) scale(1.02);
+      border-color: var(--gold-primary);
+    }
+
+    /* Wax Seal */
+    .wax-seal {
+      width: 76px;
+      height: 76px;
+      background: radial-gradient(circle, #ff3b68 0%, #a61234 85%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 25px rgba(255, 59, 104, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.3);
+      border: 2px solid #ff7b99;
+      color: #fff;
+      font-size: 1.7rem;
+      margin-bottom: 1.25rem;
+      animation: pulseSeal 2s infinite alternate ease-in-out;
+    }
+
+    @keyframes pulseSeal {
+      0% { transform: scale(0.96); box-shadow: 0 6px 20px rgba(255, 59, 104, 0.4); }
+      100% { transform: scale(1.06); box-shadow: 0 10px 30px rgba(255, 59, 104, 0.7); }
+    }
+
+    .envelope-for {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.45rem;
+      color: var(--gold-light);
+      margin-bottom: 0.35rem;
+      text-align: center;
+    }
+
+    .envelope-prompt {
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--rose-pink);
+    }
+
+    /* =========================================================
+       PURE RECIPIENT CARD (KHÔNG NÚT CẤU HÌNH, CHỈ NGHỆ THUẬT)
+    ========================================================= */
+    .recipient-card {
+      width: 100%;
+      max-width: 520px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 1.75rem 1.6rem;
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7), 
+                  0 0 50px rgba(245, 208, 133, 0.1),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      margin-top: 0.35rem;
+      margin-bottom: 0.5rem;
+      animation: cardFadeIn 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .recipient-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 15%;
+      right: 15%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+    }
+
+    .card-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      background: linear-gradient(135deg, #fff7d6 0%, #f5d085 45%, #e5a93b 85%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.25rem;
+      text-shadow: 0 4px 25px rgba(245, 208, 133, 0.25);
+    }
+
+    .card-subtitle {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-style: italic;
+      color: var(--lily-pink);
+      margin-bottom: 1.1rem;
+      letter-spacing: 0.03em;
+    }
+
+    .card-message-box {
+      min-height: auto;
+      margin: 0.8rem 0;
+      padding: 1.25rem 1.4rem;
+      background: rgba(10, 7, 16, 0.55);
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-message-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.06rem;
+      line-height: 1.72;
+      color: #faf5ff;
+      letter-spacing: 0.02em;
+    }
+
+    .card-signature {
+      font-size: 0.88rem;
+      font-style: italic;
+      color: var(--gold-light);
+      margin-top: 0.8rem;
+      opacity: 0.9;
+    }
+
+    /* =========================================================
+       CREATOR / CONFIG DRAWER (CHẾ ĐỘ TẠO THIỆP DÀNH CHO BẠN)
+    ========================================================= */
+    #config-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(5, 3, 10, 0.85);
+      backdrop-filter: blur(20px);
+      z-index: 500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    #config-modal.open {
+      display: flex;
+    }
+
+    .config-card {
+      width: 100%;
+      max-width: 520px;
+      background: #140d22;
+      border: 1px solid var(--gold-primary);
+      border-radius: 24px;
+      padding: 2rem;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.85);
+      position: relative;
+    }
+
+    .config-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .config-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.35rem;
+      color: var(--gold-primary);
+    }
+
+    .close-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-muted);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 1.35rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s;
+    }
+
+    .close-btn:hover {
+      background: rgba(255, 78, 131, 0.25);
+      border-color: var(--rose-pink);
+      color: #fff;
+      transform: scale(1.1);
+    }
+
+    .config-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .config-label {
+      display: block;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gold-light);
+      margin-bottom: 0.4rem;
+    }
+
+    .config-input, .config-textarea {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(245, 208, 133, 0.25);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      color: #fff;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: border 0.3s;
+    }
+
+    .config-input:focus, .config-textarea:focus {
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 15px rgba(245, 208, 133, 0.25);
+    }
+
+    .preset-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+
+    .chip-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+      border-radius: 20px;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+
+    .chip-btn:hover, .chip-btn.active {
+      color: #fff;
+      background: rgba(245, 208, 133, 0.2);
+      border-color: var(--gold-primary);
+    }
+
+    /* Toast Notification */
+    .toast-notice {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(26, 18, 38, 0.95);
+      border: 1px solid var(--gold-primary);
+      color: var(--gold-light);
+      padding: 0.75rem 1.6rem;
+      border-radius: 9999px;
+      font-size: 0.9rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(245, 208, 133, 0.3);
+      backdrop-filter: blur(16px);
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .toast-notice.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Sparkles */
+    .sparkle {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      animation: explodeSparkle 0.85s forwards ease-out;
+    }
+
+    @keyframes explodeSparkle {
+      0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
+      100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.4) rotate(180deg); opacity: 0; }
+    }
+
+    @keyframes cardFadeIn {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* =========================================================
+       RESPONSIVE DESIGN (DESKTOP DUAL-PANE & MOBILE OPTIMIZED)
+    ========================================================= */
+    @media (min-width: 960px) {
+      .main-wrapper {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 3.5rem;
+        max-width: 1140px;
+        margin: 0 auto;
+        padding: 4.5rem 2rem 2rem;
+      }
+
+      .flower-stage {
+        flex: 1 1 500px;
+        max-width: 520px;
+        height: 520px;
+        margin: 0;
+      }
+
+      .recipient-card {
+        flex: 1 1 440px;
+        max-width: 480px;
+        margin: 0;
+        padding: 2rem 1.8rem;
+      }
+    }
+
+    @media (max-width: 959px) {
+      .flower-stage {
+        height: 420px;
+        max-width: 480px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .main-wrapper {
+        padding: 4.2rem 0.85rem 1.5rem;
+      }
+      .flower-stage {
+        height: 330px;
+        max-width: 100%;
+        margin-bottom: 0.25rem;
+      }
+      .stage-hint {
+        font-size: 0.68rem;
+        padding: 0.22rem 0.7rem;
+        top: 6px;
+      }
+      .flower-selector-bar {
+        bottom: 4px;
+        gap: 4px;
+      }
+      .flower-chip {
+        padding: 4px 8px;
+        font-size: 0.70rem;
+        border-radius: 12px;
+      }
+      .recipient-card {
+        padding: 1.35rem 1.1rem;
+        border-radius: 20px;
+        max-width: 100%;
+        margin-top: 0;
+      }
+      .card-title {
+        font-size: 1.45rem;
+        margin-bottom: 0.2rem;
+      }
+      .card-subtitle {
+        font-size: 0.98rem;
+        margin-bottom: 0.8rem;
+      }
+      .card-message-box {
+        padding: 0.95rem 1rem;
+        margin: 0.6rem 0;
+      }
+      .card-message-text {
+        font-size: 0.95rem;
+        line-height: 1.62;
+      }
+      .card-signature {
+        font-size: 0.82rem;
+        margin-top: 0.5rem;
+      }
+      .top-nav {
+        top: 0.75rem;
+        left: 0.75rem;
+        right: 0.75rem;
+      }
+      .pill-btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.74rem;
+      }
+      .envelope-box {
+        width: 88vw;
+        max-width: 330px;
+        padding: 2.2rem 1.2rem;
+      }
+      .wax-seal {
+        width: 56px;
+        height: 56px;
+        font-size: 1.5rem;
+        margin-bottom: 0.9rem;
+      }
+      .envelope-for {
+        font-size: 1.25rem;
+      }
+      .envelope-prompt {
+        font-size: 0.76rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Canvas Background for Petals, Leaves & Stardust -->
+  <canvas id="canvas-bg"></canvas>
+
+  <!-- Aurora Ambient Spots -->
+  <div class="aurora-spot spot-1"></div>
+  <div class="aurora-spot spot-2"></div>
+
+  <!-- Top Floating Navigation -->
+  <nav class="top-nav">
+    <div class="nav-group">
+      <button class="pill-btn" id="open-config-btn" title="Chỉnh sửa nội dung thiệp">
+        <span>⚙️</span>
+        <span id="config-btn-text">Cấu hình thiệp</span>
+      </button>
+    </div>
+    <div class="nav-group">
+      <button class="pill-btn" id="music-btn" title="Phát nhạc lãng mạn">
+        <span id="music-icon">🎵</span>
+        <span id="music-text">Bật nhạc</span>
+      </button>
+      <button class="pill-btn primary" id="share-link-btn" title="Copy link gửi cho người ấy">
+        <span>💌</span>
+        <span>Gửi thiệp này</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- =========================================================
+       RECIPIENT UNBOXING ENVELOPE (Chỉ hiện khi chưa mở thư)
+  ========================================================= -->
+  <div id="envelope-screen">
+    <div class="envelope-box" id="envelope-trigger">
+      <div class="wax-seal">💌</div>
+      <h2 class="envelope-for" id="env-recipient-name">Gửi tặng Thư 💖</h2>
+      <p class="envelope-prompt">Chạm vào phong thư để mở món quà 20/10 ✨</p>
+    </div>
+  </div>
+
+  <!-- Main Experience Wrapper -->
+  <main class="main-wrapper">
+    <!-- Centerpiece: Real 3D Interactive WebGL Lily & Rose Bouquet -->
+    <div class="flower-stage">
+      <canvas id="three-flower-canvas"></canvas>
+      <div class="stage-hint">🌸 Kéo/Vuốt xoay 360° • Chạm phát sáng lung linh ✨</div>
+      
+      <!-- Loading Indicator -->
+      <div class="flower-loading" id="flower-loading">
+        <div class="loading-flower-spinner">🌸</div>
+        <div class="loading-text" id="flower-loading-text">Đang kết tinh bó hoa...</div>
+        <div class="loading-bar">
+          <div class="loading-bar-fill" id="flower-loading-progress"></div>
+        </div>
+      </div>
+
+      <div class="flower-selector-bar" id="flower-selector-bar">
+        <button class="flower-chip active" data-model="user_lily_bouquet">💐 Bó hoa ly</button>
+        <button class="flower-chip" data-model="flowers_bouquet">🌸 Bó hoa đa sắc</button>
+      </div>
+    </div>
+
+    <!-- PURE RECIPIENT CARD (Tuyệt đối không có nút cấu hình, chỉ có nét đẹp nghệ thuật) -->
+    <section class="recipient-card">
+      <h1 class="card-title">HAPPY WOMEN'S DAY</h1>
+      <p class="card-subtitle" id="display-recipient-heading">Gửi tặng Thư muôn ngàn yêu thương ✨</p>
+
+      <div class="card-message-box">
+        <p class="card-message-text" id="display-wishes-text">
+          "Chúc em luôn rạng rỡ như đóa hồng sớm mai, thanh khiết và ngát hương như những đóa hoa ly nở rộ. Mong mỗi ngày của em đều ngập tràn bình yên, nụ cười và luôn là cô gái hạnh phúc nhất bên anh."
+        </p>
+      </div>
+
+      <div class="card-signature" id="display-signature">
+        — Trân trọng trao gửi nhân ngày 20/10 💐 —
+      </div>
+    </section>
+  </main>
+
+  <!-- =========================================================
+       CREATOR CONFIGURATION MODAL (Studio thiết kế thiệp của bạn)
+  ========================================================= -->
+  <div id="config-modal">
+    <div class="config-card">
+      <div class="config-header">
+        <h2 class="config-title">Studio Thiết Kế Thiệp 20/10</h2>
+        <button class="close-btn" id="close-config-btn">&times;</button>
+      </div>
+
+      <!-- Tên người nhận -->
+      <div class="config-group">
+        <label class="config-label">1. Tên người nhận</label>
+        <input type="text" id="cfg-recipient-input" class="config-input" placeholder="VD: Thư, Mẹ yêu, Lan Anh, Chị Mai..." maxlength="35" value="Thư">
+      </div>
+
+      <!-- Lời chúc mẫu -->
+      <div class="config-group">
+        <label class="config-label">2. Lời chúc gửi trao</label>
+        <textarea id="cfg-wishes-input" class="config-textarea" rows="3" placeholder="Nhập lời chúc riêng của bạn...">Chúc em luôn rạng rỡ như đóa hồng sớm mai, thanh khiết và ngát hương như những đóa hoa ly nở rộ. Mong mỗi ngày của em đều ngập tràn bình yên, nụ cười và luôn là cô gái hạnh phúc nhất bên anh.</textarea>
+        
+        <div class="preset-chips">
+          <button class="chip-btn" data-preset="lover">Gợi ý: Người yêu / Vợ</button>
+          <button class="chip-btn" data-preset="mother">Gợi ý: Mẹ yêu</button>
+          <button class="chip-btn" data-preset="sister">Gợi ý: Chị / Em gái</button>
+          <button class="chip-btn" data-preset="colleague">Gợi ý: Bạn / Đồng nghiệp</button>
+        </div>
+      </div>
+
+      <!-- Mẫu hoa 3D chân thực -->
+      <div class="config-group">
+        <label class="config-label">3. Mẫu hoa 3D nghệ thuật trong thiệp</label>
+        <select id="cfg-flower-input" class="config-input">
+          <option value="user_lily_bouquet" selected>💐 Bó hoa ly hồng của bạn</option>
+          <option value="flowers_bouquet">🌸 Bó hoa nghệ thuật đa sắc</option>
+        </select>
+      </div>
+
+      <!-- Nút hành động -->
+      <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+        <button class="pill-btn primary" id="save-and-preview-btn" style="flex: 1; justify-content: center; padding: 0.75rem;">
+          <span>✨ Xem trước thiệp tặng</span>
+        </button>
+        <button class="pill-btn" id="copy-card-link-btn" style="flex: 1; justify-content: center; padding: 0.75rem;">
+          <span>🔗 Copy Link người ấy</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notice -->
+  <div class="toast-notice" id="toast">Đã sao chép link thiệp chúc mừng! 💖</div>
+
+  <script>
+    /* ==========================================================
+       1. STATE & PRESETS CẤU HÌNH
+    ========================================================== */
+    const PRESET_WISHES = {
+      lover: "Chúc em luôn rạng rỡ như đóa hồng sớm mai, thanh khiết và ngát hương như những đóa hoa ly nở rộ. Mong mỗi ngày của em đều ngập tràn bình yên, nụ cười và luôn là cô gái hạnh phúc nhất bên anh.",
+      mother: "Con chúc Mẹ kính yêu luôn dồi dào sức khỏe, an nhiên và tươi vui như những đóa hoa đẹp nhất trần đời. Cảm ơn tình thương bao la của Mẹ!",
+      sister: "Chúc cô gái tuyệt vời ngày 20/10 ngập tràn niềm vui, nhan sắc ngày càng thăng hạng, sự nghiệp rực rỡ và luôn hạnh phúc!",
+      colleague: "Chúc bạn ngày 20/10 ngập tràn hoa tươi, quà ngọt ngào, công việc hanh thông và luôn giữ trọn ngọn lửa nhiệt huyết, xinh đẹp!"
+    };
+
+    let state = {
+      recipient: "Thư",
+      wishes: PRESET_WISHES.lover,
+      flowerModel: "user_lily_bouquet",
+      isRecipientView: false
+    };
+
+    /* ==========================================================
+       2. PROCEDURAL TEXTURES (CÁNH HOA ĐẬM NÉT, ĐA DẠNG LOẠI HOA)
+    ========================================================== */
+    // Texture Hoa Ly Hồng Stargazer (Centerpiece: Sọc hồng tím đậm, viền trắng, đốm tàn nhang đỏ)
+    function createLilyPetalTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 1024;
+      const ctx = c.getContext('2d');
+
+      // Nền chuyển sắc tổng thể: Cuống xanh -> Thân hồng rực rỡ -> Ngọn trắng phớt hồng
+      const baseGrad = ctx.createLinearGradient(256, 1024, 256, 0);
+      baseGrad.addColorStop(0, '#58b368');     // Cuống xanh non ngát hương
+      baseGrad.addColorStop(0.12, '#a8e6cf');   // Cổ họng hoa vàng xanh nhạt
+      baseGrad.addColorStop(0.28, '#ff2d75');   // Bắt đầu dải màu hồng đậm
+      baseGrad.addColorStop(0.70, '#ff4785');   // Thân cánh hồng tươi thắm
+      baseGrad.addColorStop(0.92, '#ffe0eb');   // Chuyển mềm sang ngọn
+      baseGrad.addColorStop(1.0, '#ffffff');    // Đỉnh cánh trắng tinh khôi
+      ctx.fillStyle = baseGrad;
+      ctx.fillRect(0, 0, 512, 1024);
+
+      // Sống gân giữa màu đỏ thẫm/magenta nổi bật đặc trưng của hoa Ly
+      const spineGrad = ctx.createLinearGradient(0, 0, 512, 0);
+      spineGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');   // Rìa cánh trái trắng tinh
+      spineGrad.addColorStop(0.18, 'rgba(255, 90, 140, 0.4)');
+      spineGrad.addColorStop(0.38, 'rgba(215, 0, 75, 0.85)');    // Đỏ tím đậm
+      spineGrad.addColorStop(0.50, 'rgba(165, 0, 55, 0.98)');    // Sống gân giữa đỏ nhung sẫm
+      spineGrad.addColorStop(0.62, 'rgba(215, 0, 75, 0.85)');
+      spineGrad.addColorStop(0.82, 'rgba(255, 90, 140, 0.4)');
+      spineGrad.addColorStop(1, 'rgba(255, 255, 255, 0.95)');   // Rìa cánh phải trắng tinh
+      ctx.fillStyle = spineGrad;
+      ctx.fillRect(0, 120, 512, 800);
+
+      // Đốm tàn nhang đỏ rượu sẫm (Crimson Freckles) nổi bật dọc hai bên gân hoa Ly
+      ctx.fillStyle = '#6b001d';
+      for (let i = 0; i < 160; i++) {
+        const spread = (Math.random() - 0.5) * 160 * (1 - Math.random() * 0.3);
+        const x = 256 + spread;
+        const y = 350 + Math.random() * 520;
+        const radius = Math.random() * 4.0 + 1.2;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Vạch nổi sống gân ở chính giữa
+      ctx.strokeStyle = '#8f002a';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(256, 920);
+      ctx.lineTo(256, 260);
+      ctx.stroke();
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+      return tex;
+    }
+
+    // Texture Hoa Hồng Phấn (English Garden Rose: Hồng đào chuyển sắc nhiều tầng)
+    function createRosePetalTexture(tone = 'blush') {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+
+      const grad = ctx.createRadialGradient(256, 460, 20, 256, 256, 320);
+      if (tone === 'deep') {
+        grad.addColorStop(0, '#c7104b');    // Đỏ hồng đậm ở lòng cuống
+        grad.addColorStop(0.35, '#f53b75');
+        grad.addColorStop(0.70, '#ff709c');
+        grad.addColorStop(0.92, '#ffb8ce');
+        grad.addColorStop(1, '#ffeef4');
+      } else {
+        grad.addColorStop(0, '#d92b64');    // Hồng đào ấm áp
+        grad.addColorStop(0.38, '#ff5c8d');
+        grad.addColorStop(0.75, '#ffa2be');
+        grad.addColorStop(0.92, '#ffccd9');
+        grad.addColorStop(1, '#ffffff');
+      }
+
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Vân cánh hoa hồng mảnh mềm mại
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.lineWidth = 1.5;
+      for (let v = -8; v <= 8; v++) {
+        ctx.beginPath();
+        ctx.moveTo(256, 480);
+        ctx.quadraticCurveTo(256 + v * 28, 260, 256 + v * 32, 40);
+        ctx.stroke();
+      }
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+      return tex;
+    }
+
+    // Texture Hoa Mẫu Đơn / Cúc Thược Dược Phấn (Fluffy Peony)
+    function createPeonyPetalTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+
+      const grad = ctx.createRadialGradient(256, 440, 20, 256, 240, 280);
+      grad.addColorStop(0, '#f0436d');
+      grad.addColorStop(0.4, '#ff7a9e');
+      grad.addColorStop(0.8, '#ffc4d6');
+      grad.addColorStop(1.0, '#fff4f8');
+
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 512);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+      return tex;
+    }
+
+    // Texture Lá Bạch Đàn & Dương Xỉ (Eucalyptus Green Leaves)
+    function createLeafTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+
+      const grad = ctx.createLinearGradient(0, 0, 256, 0);
+      grad.addColorStop(0, '#235934');
+      grad.addColorStop(0.48, '#3d8252');
+      grad.addColorStop(0.50, '#1c4a2a'); // Gân lá giữa
+      grad.addColorStop(0.52, '#3d8252');
+      grad.addColorStop(1, '#235934');
+
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 256, 512);
+
+      const tex = new THREE.CanvasTexture(c);
+      return tex;
+    }
+
+    /* ==========================================================
+       3. THREE.JS 3D BOUQUET: BÓ HOA 3D ĐẦY ĐỦ HOA LY, HOA HỒNG,
+          HOA MẪU ĐƠN, HOA CÚC HỌA MI, LÁ XANH & NƠ LỤA
+    ========================================================== */
+    let scene, camera, renderer, bouquetGroup;
+    let isDragging = false, prevMouseX = 0, prevMouseY = 0;
+    let targetRotX = 0, targetRotY = 0;
+    let bloomProgress = 0;
+    let animatedFlowers = [];
+
+    // Tạo hình cánh hoa Ly 3D uốn cong kèn trumpet và ngửa ngọn (Tỉ lệ chuẩn sắc sảo)
+    function createSmoothLilyPetalGeo(w = 2.4, h = 6.4, curl = 2.5) {
+      const geo = new THREE.PlaneGeometry(w, h, 32, 32);
+      const pos = geo.attributes.position;
+
+      for (let i = 0; i < pos.count; i++) {
+        let x = pos.getX(i);
+        let y = pos.getY(i);
+        let z = pos.getZ(i);
+
+        const nx = x / w; // -0.5 to 0.5
+        const ny = (y / h) + 0.5; // 0 (cuống) to 1 (ngọn)
+
+        // Dáng cánh hoa ly: thắt hẹp ở cuống, phình ở 40%, vuốt nhọn ở ngọn
+        let widthScale = Math.sin(Math.pow(ny, 0.65) * Math.PI);
+        if (ny > 0.8) widthScale *= (1 - (ny - 0.8) / 0.2 * 0.75);
+        pos.setX(i, x * (0.24 + widthScale * 1.1));
+
+        // Rãnh sống gân giữa hoa ly lõm sâu tự nhiên
+        z -= (1 - Math.abs(nx * 2)) * 0.38 * Math.sin(ny * Math.PI);
+
+        // Uốn cong hình kèn trumpet và ngửa ngọn cánh về sau
+        if (ny < 0.42) {
+          z += Math.sin(ny / 0.42 * Math.PI * 0.5) * 0.5;
+        } else {
+          const t = (ny - 0.42) / 0.58;
+          z -= Math.pow(t, 2.1) * curl;
+        }
+
+        // Mép cánh lượn sóng nhấp nhô mềm mại
+        z += Math.sin(ny * Math.PI * 7) * 0.14 * Math.sin(Math.abs(nx) * Math.PI);
+
+        pos.setZ(i, z);
+      }
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    // 1. HOA LY HỒNG STARGAZER 3D LỚN (Centerpiece kiêu sa)
+    function create3DLily(scale = 1.0) {
+      const lilyGroup = new THREE.Group();
+      lilyGroup.scale.set(scale, scale, scale);
+      const petalTexture = createLilyPetalTexture();
+
+      const petalMat = new THREE.MeshStandardMaterial({
+        map: petalTexture,
+        roughness: 0.35,
+        metalness: 0.05,
+        side: THREE.DoubleSide
+      });
+
+      const petals = [];
+      // 6 cánh hoa ly xếp 2 lớp so le (3 cánh trong, 3 cánh ngoài)
+      for (let layer = 0; layer < 2; layer++) {
+        const count = 3;
+        const offsetAngle = layer * (Math.PI / 3);
+        const w = layer === 0 ? 2.3 : 2.6;
+        const h = 6.4;
+        const curl = layer === 0 ? 2.6 : 2.2;
+        const tilt = layer === 0 ? 1.05 : 0.92;
+
+        for (let i = 0; i < count; i++) {
+          const angle = i * ((Math.PI * 2) / 3) + offsetAngle;
+          const geo = createSmoothLilyPetalGeo(w, h, curl);
+          const petal = new THREE.Mesh(geo, petalMat);
+
+          petal.position.set(Math.cos(angle) * 0.38, 0.15, Math.sin(angle) * 0.38);
+          petal.rotation.y = -angle + Math.PI / 2;
+          petal.rotation.x = tilt;
+
+          petal.userData = {
+            baseTilt: tilt,
+            basePosX: Math.cos(angle) * 0.38,
+            basePosZ: Math.sin(angle) * 0.38
+          };
+
+          lilyGroup.add(petal);
+          petals.push(petal);
+        }
+      }
+
+      // 6 Nhị đực vươn dài với đầu bao phấn chữ T vàng cam nổi bật
+      const stamenMat = new THREE.MeshStandardMaterial({ color: 0x90db98, roughness: 0.4 });
+      const antherMat = new THREE.MeshStandardMaterial({ color: 0xb55309, roughness: 0.3, metalness: 0.1 });
+
+      for (let s = 0; s < 6; s++) {
+        const sAngle = s * (Math.PI / 3) + (Math.PI / 6);
+        const stamenGroup = new THREE.Group();
+
+        const stemGeo = new THREE.CylinderGeometry(0.04, 0.05, 3.4, 8);
+        const stemMesh = new THREE.Mesh(stemGeo, stamenMat);
+        stemMesh.position.y = 1.7;
+        stamenGroup.add(stemMesh);
+
+        // Đầu bao phấn vàng nâu
+        const antherGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.75, 8);
+        const antherMesh = new THREE.Mesh(antherGeo, antherMat);
+        antherMesh.rotation.z = Math.PI / 2;
+        antherMesh.position.y = 3.4;
+        stamenGroup.add(antherMesh);
+
+        stamenGroup.position.set(Math.cos(sAngle) * 0.18, 0.15, Math.sin(sAngle) * 0.18);
+        stamenGroup.rotation.y = -sAngle;
+        stamenGroup.rotation.x = 0.36;
+        lilyGroup.add(stamenGroup);
+      }
+
+      // 1 Nhụy cái chính giữa vươn cao
+      const pistilStemGeo = new THREE.CylinderGeometry(0.06, 0.08, 3.8, 8);
+      const pistilMesh = new THREE.Mesh(pistilStemGeo, stamenMat);
+      pistilMesh.position.y = 1.9;
+      lilyGroup.add(pistilMesh);
+
+      const stigmaGeo = new THREE.SphereGeometry(0.2, 12, 12);
+      const stigmaMat = new THREE.MeshStandardMaterial({ color: 0x41854f, roughness: 0.3 });
+      const stigmaMesh = new THREE.Mesh(stigmaGeo, stigmaMat);
+      stigmaMesh.position.y = 3.8;
+      lilyGroup.add(stigmaMesh);
+
+      // Cuống hoa cành xanh
+      const stemGeo = new THREE.CylinderGeometry(0.14, 0.12, 8, 10);
+      const mainStemMat = new THREE.MeshStandardMaterial({ color: 0x1f542c, roughness: 0.6 });
+      const stemMesh = new THREE.Mesh(stemGeo, mainStemMat);
+      stemMesh.position.y = -4.0;
+      lilyGroup.add(stemMesh);
+
+      lilyGroup.userData = { petals: petals };
+      return lilyGroup;
+    }
+
+    // 2. HOA HỒNG PHẤN 3D (English Garden Rose: Cuộn xoắn ốc nhiều tầng cánh)
+    function create3DRose(scale = 1.0, tone = 'blush') {
+      const roseGroup = new THREE.Group();
+      roseGroup.scale.set(scale, scale, scale);
+
+      const roseTex = createRosePetalTexture(tone);
+      const petalMat = new THREE.MeshStandardMaterial({
+        map: roseTex,
+        roughness: 0.30,
+        metalness: 0.05,
+        side: THREE.DoubleSide
+      });
+
+      const layers = [
+        { count: 4, w: 1.2, h: 1.9, r: 0.28, tilt: 0.20, curl: 0.75, y: 1.0 },
+        { count: 5, w: 1.6, h: 2.4, r: 0.60, tilt: 0.45, curl: 1.05, y: 0.75 },
+        { count: 6, w: 2.1, h: 2.8, r: 1.05, tilt: 0.72, curl: 1.35, y: 0.50 },
+        { count: 8, w: 2.6, h: 3.2, r: 1.50, tilt: 0.98, curl: 1.65, y: 0.25 }
+      ];
+
+      const petals = [];
+      layers.forEach((layer, layerIdx) => {
+        const step = (Math.PI * 2) / layer.count;
+        const angleOffset = (layerIdx * 137.5 * Math.PI) / 180;
+
+        for (let i = 0; i < layer.count; i++) {
+          const angle = i * step + angleOffset;
+          const geo = new THREE.PlaneGeometry(layer.w, layer.h, 20, 20);
+          const pos = geo.attributes.position;
+
+          for (let p = 0; p < pos.count; p++) {
+            let px = pos.getX(p);
+            let py = pos.getY(p);
+            let pz = pos.getZ(p);
+            const ny = (py / layer.h) + 0.5;
+            const nx = px / layer.w;
+
+            // Dáng cánh khum tròn đầy đặn
+            const wFactor = Math.sin(Math.pow(ny, 0.68) * Math.PI);
+            pos.setX(p, px * (0.35 + wFactor * 0.8));
+
+            // Cong hình chén khum vào lòng đóa hồng
+            pz += Math.sin(ny * Math.PI) * Math.cos(nx * Math.PI) * layer.curl;
+
+            // Rìa mép cánh uốn ngửa nhẹ ra ngoài
+            if (ny > 0.65) {
+              const tip = (ny - 0.65) / 0.35;
+              pz -= Math.pow(tip, 1.8) * 0.85;
+            }
+            pos.setZ(p, pz);
+          }
+          geo.computeVertexNormals();
+
+          const petal = new THREE.Mesh(geo, petalMat);
+          petal.position.set(Math.cos(angle) * layer.r, layer.y, Math.sin(angle) * layer.r);
+          petal.rotation.y = -angle + Math.PI / 2;
+          petal.rotation.x = layer.tilt;
+
+          petal.userData = {
+            baseTilt: layer.tilt,
+            basePosX: Math.cos(angle) * layer.r,
+            basePosZ: Math.sin(angle) * layer.r
+          };
+
+          roseGroup.add(petal);
+          petals.push(petal);
+        }
+      });
+
+      // Đài hoa xanh
+      const calyxMat = new THREE.MeshStandardMaterial({ color: 0x245e33, roughness: 0.5 });
+      const calyxGeo = new THREE.ConeGeometry(0.9, 0.8, 5);
+      const calyx = new THREE.Mesh(calyxGeo, calyxMat);
+      calyx.position.y = -0.3;
+      calyx.rotation.x = Math.PI;
+      roseGroup.add(calyx);
+
+      // Cành hoa hồng
+      const stemGeo = new THREE.CylinderGeometry(0.1, 0.08, 7.5, 8);
+      const stemMat = new THREE.MeshStandardMaterial({ color: 0x1f542c, roughness: 0.6 });
+      const stem = new THREE.Mesh(stemGeo, stemMat);
+      stem.position.y = -3.8;
+      roseGroup.add(stem);
+
+      roseGroup.userData = { petals: petals };
+      return roseGroup;
+    }
+
+    // 3. HOA MẪU ĐƠN / CÚC THƯỢC DƯỢC PHẤN 3D (Fluffy Peony: Bồng bềnh nhiều nếp gấp)
+    function create3DPeony(scale = 1.0) {
+      const peony = new THREE.Group();
+      peony.scale.set(scale, scale, scale);
+
+      const peonyTex = createPeonyPetalTexture();
+      const petalMat = new THREE.MeshStandardMaterial({
+        map: peonyTex,
+        roughness: 0.32,
+        side: THREE.DoubleSide
+      });
+
+      const layers = [
+        { count: 6, w: 1.2, h: 1.8, r: 0.35, tilt: 0.25, y: 0.8 },
+        { count: 8, w: 1.5, h: 2.2, r: 0.70, tilt: 0.55, y: 0.55 },
+        { count: 10, w: 1.9, h: 2.6, r: 1.20, tilt: 0.85, y: 0.25 }
+      ];
+
+      layers.forEach((layer, layerIdx) => {
+        const step = (Math.PI * 2) / layer.count;
+        const offset = layerIdx * 0.4;
+        for (let i = 0; i < layer.count; i++) {
+          const angle = i * step + offset;
+          const geo = new THREE.PlaneGeometry(layer.w, layer.h, 14, 14);
+          const pos = geo.attributes.position;
+          for (let p = 0; p < pos.count; p++) {
+            let px = pos.getX(p);
+            let py = pos.getY(p);
+            let pz = pos.getZ(p);
+            const ny = (py / layer.h) + 0.5;
+            pz += Math.sin(ny * Math.PI) * 0.6 + Math.sin(px * 8) * 0.12;
+            pos.setZ(p, pz);
+          }
+          geo.computeVertexNormals();
+
+          const petal = new THREE.Mesh(geo, petalMat);
+          petal.position.set(Math.cos(angle) * layer.r, layer.y, Math.sin(angle) * layer.r);
+          petal.rotation.y = -angle + Math.PI / 2;
+          petal.rotation.x = layer.tilt;
+          peony.add(petal);
+        }
+      });
+
+      // Cành
+      const stemGeo = new THREE.CylinderGeometry(0.09, 0.07, 7, 8);
+      const stemMat = new THREE.MeshStandardMaterial({ color: 0x235934, roughness: 0.6 });
+      const stem = new THREE.Mesh(stemGeo, stemMat);
+      stem.position.y = -3.5;
+      peony.add(stem);
+
+      return peony;
+    }
+
+    // 4. HOA CÚC HỌA MI 3D (Chamomile Daisies: Cánh trắng tinh, nhụy vòm vàng cam)
+    function create3DDaisy(scale = 0.55) {
+      const daisy = new THREE.Group();
+      daisy.scale.set(scale, scale, scale);
+
+      // Nhụy vàng cam vòm tròn nổi bật
+      const centerGeo = new THREE.SphereGeometry(0.42, 14, 12);
+      centerGeo.scale(1, 0.55, 1);
+      const centerMat = new THREE.MeshStandardMaterial({
+        color: 0xf59e0b,
+        roughness: 0.35,
+        emissive: 0x5a3400,
+        emissiveIntensity: 0.2
+      });
+      const centerMesh = new THREE.Mesh(centerGeo, centerMat);
+      centerMesh.position.y = 0.18;
+      daisy.add(centerMesh);
+
+      // 16 Cánh hoa trắng muốt thuôn dài xung quanh
+      const petalGeo = new THREE.PlaneGeometry(0.32, 1.25, 8, 8);
+      const pos = petalGeo.attributes.position;
+      for (let p = 0; p < pos.count; p++) {
+        let y = pos.getY(p);
+        let z = pos.getZ(p);
+        let ny = (y / 1.25) + 0.5;
+        z += Math.sin(ny * Math.PI) * 0.1;
+        pos.setZ(p, z);
+      }
+      petalGeo.computeVertexNormals();
+
+      const petalMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.35,
+        side: THREE.DoubleSide
+      });
+
+      for (let i = 0; i < 16; i++) {
+        const angle = (i * Math.PI * 2) / 16;
+        const petal = new THREE.Mesh(petalGeo, petalMat);
+        petal.position.set(Math.cos(angle) * 0.58, 0.1, Math.sin(angle) * 0.58);
+        petal.rotation.y = -angle + Math.PI / 2;
+        petal.rotation.x = 1.0 + (Math.random() - 0.5) * 0.15;
+        daisy.add(petal);
+      }
+
+      // Cành xanh mảnh mai
+      const stemGeo = new THREE.CylinderGeometry(0.05, 0.04, 6, 8);
+      const stemMat = new THREE.MeshStandardMaterial({ color: 0x3d8252, roughness: 0.5 });
+      const stem = new THREE.Mesh(stemGeo, stemMat);
+      stem.position.y = -3.0;
+      daisy.add(stem);
+
+      return daisy;
+    }
+
+    // 5. GIẤY GÓI HOA HÀN QUỐC & NƠ LỤA HỒNG 3D
+    function createBouquetWrapAndRibbon() {
+      const wrapGroup = new THREE.Group();
+
+      const wrapMat = new THREE.MeshStandardMaterial({
+        color: 0xfaf7f2,
+        roughness: 0.45,
+        transparent: true,
+        opacity: 0.90,
+        side: THREE.DoubleSide
+      });
+
+      // Lớp giấy gói chính hình nón vát ôm thân cành
+      const coneGeo = new THREE.ConeGeometry(3.6, 7.8, 28, 1, true);
+      const coneMesh = new THREE.Mesh(coneGeo, wrapMat);
+      coneMesh.position.y = -4.0;
+      coneMesh.rotation.x = Math.PI;
+      wrapGroup.add(coneMesh);
+
+      // Các vạt giấy xếp origami xòe viền trên (Korean paper wrap layers)
+      for (let w = 0; w < 4; w++) {
+        const flapAngle = (w * Math.PI * 2) / 4 + 0.35;
+        const flapGeo = new THREE.PlaneGeometry(3.2, 4.0, 10, 10);
+        const fpos = flapGeo.attributes.position;
+        for (let j = 0; j < fpos.count; j++) {
+          let fy = (fpos.getY(j) / 4.0) + 0.5;
+          fpos.setZ(j, Math.sin(fy * Math.PI) * 0.5);
+        }
+        flapGeo.computeVertexNormals();
+
+        const flapMesh = new THREE.Mesh(flapGeo, wrapMat);
+        flapMesh.position.set(Math.cos(flapAngle) * 2.4, -1.8, Math.sin(flapAngle) * 2.4);
+        flapMesh.rotation.y = -flapAngle + Math.PI / 2;
+        flapMesh.rotation.x = 0.52;
+        wrapGroup.add(flapMesh);
+      }
+
+      // Nơ lụa hồng thắt tinh tế (Satin Bow & Streamers)
+      const ribbonMat = new THREE.MeshStandardMaterial({
+        color: 0xff3b73,
+        roughness: 0.22,
+        metalness: 0.15
+      });
+
+      // Nút thắt nơ trung tâm
+      const knotGeo = new THREE.SphereGeometry(0.36, 12, 12);
+      knotGeo.scale(1.2, 1, 0.9);
+      const knot = new THREE.Mesh(knotGeo, ribbonMat);
+      knot.position.set(0, -2.6, 1.8);
+      wrapGroup.add(knot);
+
+      // 2 Vòng cánh nơ phồng mềm
+      const loopGeo = new THREE.TorusGeometry(0.72, 0.17, 12, 24);
+      const leftLoop = new THREE.Mesh(loopGeo, ribbonMat);
+      leftLoop.position.set(-0.75, -2.5, 1.7);
+      leftLoop.rotation.set(0.2, 0.5, -0.4);
+      wrapGroup.add(leftLoop);
+
+      const rightLoop = new THREE.Mesh(loopGeo, ribbonMat);
+      rightLoop.position.set(0.75, -2.5, 1.7);
+      rightLoop.rotation.set(0.2, -0.5, 0.4);
+      wrapGroup.add(rightLoop);
+
+      // 2 Dải ruy băng lụa rủ lượn sóng xuống dưới
+      const tailMat = new THREE.MeshStandardMaterial({ color: 0xff3b73, roughness: 0.22, side: THREE.DoubleSide });
+      for (let t = -1; t <= 1; t += 2) {
+        const tailGeo = new THREE.PlaneGeometry(0.40, 3.6, 10, 10);
+        const tpos = tailGeo.attributes.position;
+        for (let k = 0; k < tpos.count; k++) {
+          let ty = (tpos.getY(k) / 3.6) + 0.5;
+          tpos.setZ(k, Math.sin(ty * Math.PI * 2) * 0.32);
+          tpos.setX(k, tpos.getX(k) + Math.sin(ty * Math.PI) * 0.35 * t);
+        }
+        tailGeo.computeVertexNormals();
+
+        const tail = new THREE.Mesh(tailGeo, tailMat);
+        tail.position.set(t * 0.42, -4.2, 1.8);
+        tail.rotation.x = 0.15;
+        wrapGroup.add(tail);
+      }
+
+      return wrapGroup;
+    }
+
+    // KHỞI TẠO BÓ HOA 3D HOÀN CHỈNH (Three.js Scene)
+    function initThreeBouquet() {
+      const canvasEl = document.getElementById('three-flower-canvas');
+      const stage = canvasEl.parentElement;
+      const width = stage.clientWidth || 580;
+      const height = stage.clientHeight || 500;
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 100);
+      camera.position.set(0, 0.6, 21.5);
+      camera.lookAt(0, 0.4, 0);
+
+      renderer = new THREE.WebGLRenderer({ canvas: canvasEl, alpha: true, antialias: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.05;
+
+      // HỆ THỐNG ÁNH SÁNG STUDIO NGHỆ THUẬT (Không bị lóa trắng, giữ trọn sắc hồng hoa tươi)
+      const ambientLight = new THREE.AmbientLight(0xfff0f5, 0.85);
+      scene.add(ambientLight);
+
+      // Nguồn sáng chính ấm áp góc trên phải
+      const keyLight = new THREE.DirectionalLight(0xfff7ed, 1.30);
+      keyLight.position.set(8, 14, 12);
+      scene.add(keyLight);
+
+      // Nguồn sáng phụ hồng dịu dàng góc trái
+      const fillLight = new THREE.DirectionalLight(0xffb3c6, 0.70);
+      fillLight.position.set(-10, 1, 8);
+      scene.add(fillLight);
+
+      // Nguồn sáng ngược (Rim light) tôn đường nét viền cánh hoa lung linh từ phía sau
+      const rimLight = new THREE.DirectionalLight(0xffd6e4, 0.95);
+      rimLight.position.set(0, 8, -12);
+      scene.add(rimLight);
+
+      // Điểm sáng ấm tôn sắc hoa
+      const coreGlow = new THREE.PointLight(0xff5588, 1.2, 10);
+      coreGlow.position.set(0, 1.5, 3.0);
+      scene.add(coreGlow);
+
+      bouquetGroup = new THREE.Group();
+      bouquetGroup.position.set(0, -0.2, 0);
+      scene.add(bouquetGroup);
+
+      // ==========================================
+      // TẢI MODEL 3D THẬT (GLTF / GLB PHOTOREALISTIC)
+      // ==========================================
+      const flowerModelsMap = {
+        'user_lily_bouquet': { 
+          name: '💐 Bó hoa ly hồng', 
+          url: 'user_lily_bouquet.glb', 
+          scaleMultiplier: 1.18, 
+          yOffset: -0.15, 
+          baseRotY: -1.55, 
+          baseRotX: 0.16,
+          baseRotZ: 0.12
+        },
+        'flowers_bouquet': { 
+          name: '🌸 Bó hoa nghệ thuật đa sắc', 
+          url: 'flowers_bouquet.glb', 
+          scaleMultiplier: 1.05, 
+          yOffset: 0.0, 
+          baseRotY: 0.0, 
+          baseRotX: 0.32,
+          baseRotZ: 0.0
+        }
+      };
+
+      let currentLoadedMesh = null;
+      let userDragAngleY = 0;
+      let userDragAngleX = 0;
+      const gltfLoader = new THREE.GLTFLoader();
+      if (typeof MeshoptDecoder !== 'undefined') {
+        gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+      }
+
+      window.switch3DFlower = function(key) {
+        if (!flowerModelsMap[key]) key = 'user_lily_bouquet';
+        state.flowerModel = key;
+        const cfg = flowerModelsMap[key];
+
+        // Reset drag angles to return to straight front orientation
+        userDragAngleY = 0;
+        userDragAngleX = 0;
+        targetRotY = 0;
+        targetRotX = 0;
+
+        // Update active class on chips
+        document.querySelectorAll('.flower-chip').forEach(chip => {
+          chip.classList.toggle('active', chip.dataset.model === key);
+        });
+        const cfgSelect = document.getElementById('cfg-flower-input');
+        if (cfgSelect) cfgSelect.value = key;
+
+        if (currentLoadedMesh) {
+          bouquetGroup.remove(currentLoadedMesh);
+          currentLoadedMesh = null;
+        }
+
+        const loadingBox = document.getElementById('flower-loading');
+        const loadingProgress = document.getElementById('flower-loading-progress');
+        const loadingText = document.getElementById('flower-loading-text');
+
+        if (loadingBox) {
+          loadingBox.classList.remove('hidden');
+          if (loadingProgress) loadingProgress.style.width = '15%';
+          if (loadingText) loadingText.textContent = `Đang kết tinh ${cfg.name}...`;
+        }
+
+        gltfLoader.load(cfg.url, (gltf) => {
+          const model = gltf.scene;
+
+          // Auto-center and normalize size
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          const center = box.getCenter(new THREE.Vector3());
+
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const targetSize = 10.8 * (cfg.scaleMultiplier || 1.0);
+          const scale = targetSize / (maxDim || 1);
+
+          model.scale.set(scale, scale, scale);
+          model.position.x = -center.x * scale;
+          model.position.y = -center.y * scale;
+          model.position.z = -center.z * scale;
+
+          const modelWrapper = new THREE.Group();
+          modelWrapper.add(model);
+          modelWrapper.rotation.y = cfg.baseRotY || 0;
+          modelWrapper.rotation.x = cfg.baseRotX || 0;
+          modelWrapper.rotation.z = cfg.baseRotZ || 0;
+          modelWrapper.position.y = cfg.yOffset || 0;
+
+          currentLoadedMesh = modelWrapper;
+          bouquetGroup.add(modelWrapper);
+
+          if (loadingBox) {
+            if (loadingProgress) loadingProgress.style.width = '100%';
+            setTimeout(() => {
+              loadingBox.classList.add('hidden');
+            }, 350);
+          }
+        }, (xhr) => {
+          if (xhr.lengthComputable && loadingProgress && loadingText) {
+            const percent = Math.round((xhr.loaded / xhr.total) * 100);
+            loadingProgress.style.width = Math.max(15, percent) + '%';
+            loadingText.textContent = `Đang kết tinh ${cfg.name}... ${percent}%`;
+          }
+        }, (err) => {
+          console.error('Lỗi khi tải 3D model:', err);
+          if (loadingText) loadingText.textContent = 'Đang tải dự phòng...';
+          setTimeout(() => {
+            if (loadingBox) loadingBox.classList.add('hidden');
+          }, 1500);
+        });
+      };
+
+      // Load initial model from state
+      window.switch3DFlower(state.flowerModel || 'flowers_bouquet');
+
+      // Bind flower chips click
+      document.querySelectorAll('.flower-chip').forEach(chip => {
+        chip.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const modelKey = chip.dataset.model;
+          window.switch3DFlower(modelKey);
+          spawnSparkleBurst(e.clientX, e.clientY, 20);
+          playChimeNote(784.0);
+        });
+      });
+
+      // Bind config modal select change
+      const cfgSelect = document.getElementById('cfg-flower-input');
+      if (cfgSelect) {
+        cfgSelect.addEventListener('change', () => {
+          window.switch3DFlower(cfgSelect.value);
+        });
+      }
+
+      // 10. PHẤN HOA PHÁT SÁNG LƠ LỬNG QUANH BÓ HOA
+      const pollenGeo = new THREE.BufferGeometry();
+      const pollenCount = 120;
+      const pollenPos = new Float32Array(pollenCount * 3);
+      for (let p = 0; p < pollenCount * 3; p += 3) {
+        pollenPos[p] = (Math.random() - 0.5) * 9.5;
+        pollenPos[p + 1] = Math.random() * 8.5 - 2.5;
+        pollenPos[p + 2] = (Math.random() - 0.5) * 9.5;
+      }
+      pollenGeo.setAttribute('position', new THREE.BufferAttribute(pollenPos, 3));
+      const pollenMat = new THREE.PointsMaterial({
+        color: 0xffe285,
+        size: 0.18,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending
+      });
+      const pollenPoints = new THREE.Points(pollenGeo, pollenMat);
+      bouquetGroup.add(pollenPoints);
+
+      // Tương tác kéo xoay 360 độ (Drag Orbit mượt mà trên cả Mobile & Desktop)
+      let pointerDownX = 0, pointerDownY = 0;
+
+      canvasEl.addEventListener('pointerdown', (e) => {
+        isDragging = true;
+        prevMouseX = pointerDownX = e.clientX;
+        prevMouseY = pointerDownY = e.clientY;
+        try { canvasEl.setPointerCapture(e.pointerId); } catch(err) {}
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (!isDragging) {
+          const nx = (e.clientX / window.innerWidth) - 0.5;
+          const ny = (e.clientY / window.innerHeight) - 0.5;
+          targetRotY = userDragAngleY + nx * 0.08;
+          targetRotX = userDragAngleX + ny * 0.06;
+          return;
+        }
+        const deltaX = e.clientX - prevMouseX;
+        const deltaY = e.clientY - prevMouseY;
+        prevMouseX = e.clientX;
+        prevMouseY = e.clientY;
+
+        userDragAngleY += deltaX * 0.012;
+        userDragAngleX = Math.max(-0.45, Math.min(0.65, userDragAngleX + deltaY * 0.012));
+        targetRotY = userDragAngleY;
+        targetRotX = userDragAngleX;
+      });
+
+      window.addEventListener('pointerup', (e) => {
+        isDragging = false;
+        try { canvasEl.releasePointerCapture(e.pointerId); } catch(err) {}
+      });
+
+      window.addEventListener('pointercancel', () => {
+        isDragging = false;
+      });
+
+      // Nhấn/chạm nhẹ vào bó hoa 3D để bung nở & âm thanh chuông ngân
+      canvasEl.addEventListener('click', (e) => {
+        const moveDist = Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY);
+        if (moveDist < 12) {
+          triggerBouquetBloom();
+          spawnSparkleBurst(e.clientX, e.clientY, 35);
+          playChimeNote(659.25);
+        }
+      });
+
+      function resizeThree() {
+        const w = stage.clientWidth || 500;
+        const h = stage.clientHeight || 500;
+        if (w === 0 || h === 0) return;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      }
+
+      window.addEventListener('resize', resizeThree);
+      setTimeout(resizeThree, 100);
+      setTimeout(resizeThree, 500);
+
+      animateThree();
+    }
+
+    let clickPulse = 0;
+    function triggerBouquetBloom() {
+      clickPulse = 1.0;
+    }
+
+    function animateThree() {
+      requestAnimationFrame(animateThree);
+
+      // Đung đưa êm ái bồng bềnh nhưng luôn giữ thẳng góc chính diện
+      const swayY = Math.sin(Date.now() * 0.001) * 0.025;
+      bouquetGroup.rotation.y += (targetRotY + swayY - bouquetGroup.rotation.y) * 0.06;
+      bouquetGroup.rotation.x += (targetRotX - bouquetGroup.rotation.x) * 0.06;
+      bouquetGroup.position.y = -0.25 + Math.sin(Date.now() * 0.0016) * 0.09;
+
+      // Hiệu ứng nảy bồng bềnh khi chạm vào
+      if (clickPulse > 0.001) {
+        clickPulse *= 0.92;
+        const s = 1.0 + Math.sin(clickPulse * Math.PI) * 0.08;
+        bouquetGroup.scale.set(s, s, s);
+      } else {
+        bouquetGroup.scale.set(1, 1, 1);
+      }
+
+      renderer.render(scene, camera);
+    }
+
+        /* ==========================================================
+       4. BACKGROUND CANVAS: FALLING PINK PETALS & STARDUST
+    ========================================================== */
+    const canvas = document.getElementById('canvas-bg');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+    let petals = [];
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class FallingPetal {
+      constructor() {
+        this.reset();
+        this.y = Math.random() * height;
+      }
+
+      reset() {
+        this.x = Math.random() * (width + 100) - 50;
+        this.y = -50;
+        this.size = Math.random() * 14 + 10;
+        this.speedY = Math.random() * 1.4 + 0.7;
+        this.speedX = Math.random() * 1.0 - 0.2;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.025;
+        this.flip = Math.random() * Math.PI;
+        this.flipSpeed = Math.random() * 0.03 + 0.01;
+        this.opacity = Math.random() * 0.5 + 0.45;
+      }
+
+      update() {
+        this.y += this.speedY;
+        this.x += Math.sin(this.y * 0.007) * 0.9 + this.speedX;
+        this.rotation += this.rotationSpeed;
+        this.flip += this.flipSpeed;
+        if (this.y > height + 50) this.reset();
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.scale(Math.sin(this.flip), 1);
+        ctx.globalAlpha = this.opacity;
+
+        const grad = ctx.createLinearGradient(0, -this.size, 0, this.size);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.4, '#ffd1df');
+        grad.addColorStop(1, 'rgba(235, 78, 128, 0.85)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(0, -this.size);
+        ctx.bezierCurveTo(this.size * 0.65, -this.size * 0.4, this.size * 0.65, this.size * 0.7, 0, this.size);
+        ctx.bezierCurveTo(-this.size * 0.65, this.size * 0.7, -this.size * 0.65, -this.size * 0.4, 0, -this.size);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    class StardustPoint {
+      constructor() {
+        this.reset();
+        this.y = Math.random() * height;
+      }
+
+      reset() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.radius = Math.random() * 2 + 0.6;
+        this.speedX = (Math.random() - 0.5) * 0.3;
+        this.speedY = -Math.random() * 0.5 - 0.2;
+        this.alpha = Math.random() * 0.7 + 0.3;
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.y < -10) { this.reset(); this.y = height + 10; }
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = '#ffecb3';
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#ffd54f';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    for (let i = 0; i < 40; i++) petals.push(new FallingPetal());
+    for (let i = 0; i < 50; i++) particles.push(new StardustPoint());
+
+    function animateCanvas() {
+      ctx.clearRect(0, 0, width, height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      petals.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animateCanvas);
+    }
+    animateCanvas();
+
+    /* ==========================================================
+       5. PHÁT BÀI HÁT: GIẢI CỨU THẾ GIỚI
+    ========================================================== */
+    let audioCtx = null;
+    let isPlaying = false;
+    const bgAudio = new Audio('giai_cuu_the_gioi.m4a');
+    bgAudio.loop = true;
+    bgAudio.volume = 0.85;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playTone(freq, time, duration = 2.4, type = 'sine', gainVal = 0.08) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, time);
+
+      gain.gain.setValueAtTime(0.0001, time);
+      gain.gain.exponentialRampToValueAtTime(gainVal, time + 0.2);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(time);
+      osc.stop(time + duration);
+    }
+
+    function playChimeNote(freq) {
+      initAudio();
+      if (!audioCtx) return;
+      playTone(freq, audioCtx.currentTime, 1.6, 'sine', 0.15);
+    }
+
+    function toggleMusic(forcePlay = false) {
+      initAudio();
+      if (forcePlay) isPlaying = true;
+      else isPlaying = !isPlaying;
+
+      const musicIcon = document.getElementById('music-icon');
+      const musicText = document.getElementById('music-text');
+
+      if (isPlaying) {
+        musicIcon.textContent = '⏸️';
+        musicText.textContent = 'Dừng nhạc';
+        bgAudio.play().catch(e => console.log('Audio playback waiting for gesture:', e));
+      } else {
+        musicIcon.textContent = '🎵';
+        musicText.textContent = 'Bật nhạc';
+        bgAudio.pause();
+      }
+    }
+    document.getElementById('music-btn').addEventListener('click', () => toggleMusic());
+
+    /* ==========================================================
+       6. CHẾ ĐỘ NGƯỜI NHẬN: MỞ PHONG THƯ SÁP NIÊM PHONG
+    ========================================================== */
+    const envelopeScreen = document.getElementById('envelope-screen');
+    const envelopeTrigger = document.getElementById('envelope-trigger');
+    const envRecipientName = document.getElementById('env-recipient-name');
+
+    envelopeTrigger.addEventListener('click', () => {
+      envelopeScreen.classList.add('opened');
+      toggleMusic(true);
+      triggerBouquetBloom();
+      spawnSparkleBurst(window.innerWidth / 2, window.innerHeight / 2, 45);
+      showToast('Chúc bạn một ngày 20/10 ngập tràn hạnh phúc! 💖');
+    });
+
+    /* ==========================================================
+       7. ĐỒNG BỘ NỘI DUNG THIỆP & STUDIO CẤU HÌNH
+    ========================================================= */
+    const displayRecipientHeading = document.getElementById('display-recipient-heading');
+    const displayWishesText = document.getElementById('display-wishes-text');
+
+    const configModal = document.getElementById('config-modal');
+    const openConfigBtn = document.getElementById('open-config-btn');
+    const closeConfigBtn = document.getElementById('close-config-btn');
+    const cfgRecipientInput = document.getElementById('cfg-recipient-input');
+    const cfgWishesInput = document.getElementById('cfg-wishes-input');
+    const saveAndPreviewBtn = document.getElementById('save-and-preview-btn');
+    const copyCardLinkBtn = document.getElementById('copy-card-link-btn');
+    const shareLinkBtn = document.getElementById('share-link-btn');
+
+    function applyStateToUI() {
+      envRecipientName.textContent = `Gửi tặng ${state.recipient} 💖`;
+      displayRecipientHeading.textContent = `Gửi tặng ${state.recipient} muôn ngàn yêu thương ✨`;
+      displayWishesText.textContent = `"${state.wishes}"`;
+    }
+
+    openConfigBtn.addEventListener('click', () => {
+      cfgRecipientInput.value = state.recipient;
+      cfgWishesInput.value = state.wishes;
+      configModal.classList.add('open');
+    });
+
+    closeConfigBtn.addEventListener('click', () => {
+      configModal.classList.remove('open');
+    });
+
+    configModal.addEventListener('click', (e) => {
+      if (e.target === configModal) {
+        configModal.classList.remove('open');
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && configModal.classList.contains('open')) {
+        configModal.classList.remove('open');
+      }
+    });
+
+    document.querySelectorAll('.chip-btn').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const preset = chip.dataset.preset;
+        if (PRESET_WISHES[preset]) {
+          cfgWishesInput.value = PRESET_WISHES[preset];
+        }
+      });
+    });
+
+    saveAndPreviewBtn.addEventListener('click', () => {
+      state.recipient = cfgRecipientInput.value.trim() || "Người phụ nữ tuyệt vời";
+      state.wishes = cfgWishesInput.value.trim() || PRESET_WISHES.lover;
+      const cfgFlower = document.getElementById('cfg-flower-input');
+      if (cfgFlower) {
+        state.flowerModel = cfgFlower.value;
+        if (window.switch3DFlower) window.switch3DFlower(state.flowerModel);
+      }
+      applyStateToUI();
+      configModal.classList.remove('open');
+      envelopeScreen.classList.remove('opened');
+      showToast('Đang ở chế độ xem trước thiệp gửi tặng! ✨');
+    });
+
+    function getShareableURL() {
+      // Link chia sẻ luôn trỏ về trang gốc sạch, loại bỏ hoàn toàn studio.html hoặc tham số edit
+      const basePath = window.location.pathname.replace(/studio\.html.*/, '');
+      const url = new URL(window.location.origin + basePath);
+      url.searchParams.set('to', state.recipient);
+      // Chỉ gắn msg nếu người dùng đã tùy biến khác câu mặc định để link ngắn gọn và đẹp mắt
+      if (state.wishes && state.wishes !== PRESET_WISHES.lover) {
+        url.searchParams.set('msg', state.wishes);
+      }
+      if (state.flowerModel && state.flowerModel !== 'user_lily_bouquet') {
+        url.searchParams.set('flower', state.flowerModel);
+      }
+      return url.toString();
+    }
+
+    function copyShareLink() {
+      const shareUrl = getShareableURL();
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        showToast('Đã copy Link quà tặng! Gửi link này cho người ấy nhé 💌');
+      }).catch(() => {
+        showToast('Đã tạo link thiệp chúc mừng!');
+      });
+    }
+
+    copyCardLinkBtn.addEventListener('click', copyShareLink);
+    shareLinkBtn.addEventListener('click', () => {
+      state.recipient = cfgRecipientInput.value.trim() || state.recipient;
+      state.wishes = cfgWishesInput.value.trim() || state.wishes;
+      const cfgFlower = document.getElementById('cfg-flower-input');
+      if (cfgFlower) state.flowerModel = cfgFlower.value;
+      copyShareLink();
+    });
+
+    /* ==========================================================
+       8. PHÂN QUYỀN: LINK NGƯỜI NHẬN (MẶC ĐỊNH) VS STUDIO BÍ MẬT
+    ========================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const toParam = params.get('to');
+      const msgParam = params.get('msg');
+      const flowerParam = params.get('flower');
+
+      // Studio chỉ kích hoạt khi có tham số bí mật: ?studio=1, ?edit=1, ?admin=1 hoặc file studio.html
+      const isStudio = params.has('studio') || params.has('edit') || params.has('admin') || params.has('config') || window.location.pathname.includes('studio');
+
+      if (toParam) state.recipient = toParam;
+      if (msgParam) state.wishes = msgParam;
+      if (flowerParam) state.flowerModel = flowerParam;
+
+      const cfgFlower = document.getElementById('cfg-flower-input');
+      if (cfgFlower) cfgFlower.value = state.flowerModel;
+
+      applyStateToUI();
+
+      if (isStudio) {
+        // CHẾ ĐỘ STUDIO DÀNH CHO BẠN TẠO THIỆP
+        state.isRecipientView = false;
+        openConfigBtn.style.display = 'inline-flex';
+        shareLinkBtn.style.display = 'inline-flex';
+        // Mở sẵn phong bì để bạn thấy ngay bó hoa và thiệp để tinh chỉnh
+        envelopeScreen.classList.add('opened');
+        if (params.get('studio') === 'open' || params.has('config') || params.has('edit')) {
+          configModal.classList.add('open');
+        }
+      } else {
+        // CHẾ ĐỘ NGƯỜI NHẬN (ÁP DỤNG CHO LINK GỐC VÀ MỌI LINK GỬI ĐI)
+        state.isRecipientView = true;
+        openConfigBtn.style.display = 'none';
+        shareLinkBtn.style.display = 'none';
+        // Luôn hiển thị phong bì sáp đỏ bất ngờ để người nhận chạm mở
+        envelopeScreen.classList.remove('opened');
+      }
+
+      // Bí mật mở Studio: Chạm nhanh 5 lần vào dòng chữ ký 20/10 hoặc bấm phím Ctrl+Shift+S
+      let secretTapCount = 0;
+      let secretTapTimer = null;
+      const displaySignature = document.getElementById('display-signature');
+      if (displaySignature) {
+        displaySignature.addEventListener('click', () => {
+          secretTapCount++;
+          clearTimeout(secretTapTimer);
+          secretTapTimer = setTimeout(() => { secretTapCount = 0; }, 1500);
+          if (secretTapCount >= 5) {
+            secretTapCount = 0;
+            openConfigBtn.style.display = 'inline-flex';
+            shareLinkBtn.style.display = 'inline-flex';
+            configModal.classList.add('open');
+            showToast('✨ Đã mở Studio cấu hình thiệp bí mật!');
+          }
+        });
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+          e.preventDefault();
+          openConfigBtn.style.display = 'inline-flex';
+          shareLinkBtn.style.display = 'inline-flex';
+          configModal.classList.toggle('open');
+          showToast('✨ Studio cấu hình thiệp');
+        }
+      });
+
+      setTimeout(initThreeBouquet, 80);
+    });
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2800);
+    }
+
+    function spawnSparkleBurst(x, y, count = 25) {
+      const symbols = ['🌸', '✨', '💖', '💐', '⭐', '🤍'];
+      for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.className = 'sparkle';
+        el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        el.style.fontSize = `${Math.random() * 16 + 14}px`;
+
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 140 + 40;
+        el.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+        el.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 850);
+      }
+    }
+  </script>
+</body>
+</html>
