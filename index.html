@@ -507,10 +507,12 @@
     .config-card {
       width: 100%;
       max-width: 520px;
+      max-height: 92vh;
+      overflow-y: auto;
       background: #140d22;
       border: 1px solid var(--gold-primary);
       border-radius: 24px;
-      padding: 2rem;
+      padding: 1.8rem;
       box-shadow: 0 25px 80px rgba(0,0,0,0.85);
       position: relative;
     }
@@ -879,14 +881,45 @@
         </select>
       </div>
 
+      <!-- 4. Link quà tặng tạo tự động theo thời gian thực -->
+      <div class="config-group" style="margin-top: 1.1rem; background: rgba(245, 208, 133, 0.08); border: 1px solid rgba(245, 208, 133, 0.35); border-radius: 14px; padding: 12px 14px;">
+        <label class="config-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span>4. Link quà tặng tạo riêng:</span>
+          <span style="font-size: 0.72rem; color: #a69ebd; text-transform: none;">(Tự cập nhật khi gõ tên)</span>
+        </label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="live-share-url-input" readonly class="config-input" style="font-size: 0.78rem; font-family: monospace; background: rgba(0,0,0,0.45); color: #ffd166; padding: 7px 10px;" />
+          <button class="pill-btn primary" id="copy-live-link-btn" type="button" style="padding: 7px 12px; white-space: nowrap; font-size: 0.8rem;">
+            <span>📋 Copy</span>
+          </button>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+          <span style="font-size: 0.73rem; color: #a69ebd;">💡 Dữ liệu lưu trong URL, mỗi người 1 link riêng!</span>
+          <a id="preview-tab-link" href="#" target="_blank" style="font-size: 0.75rem; color: #ff85a1; text-decoration: none; font-weight: 500;">
+            Mở xem thử tab mới ↗
+          </a>
+        </div>
+      </div>
+
       <!-- Nút hành động -->
-      <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+      <div style="display: flex; gap: 0.75rem; margin-top: 1.1rem;">
         <button class="pill-btn primary" id="save-and-preview-btn" style="flex: 1; justify-content: center; padding: 0.75rem;">
           <span>✨ Xem trước thiệp tặng</span>
         </button>
         <button class="pill-btn" id="copy-card-link-btn" style="flex: 1; justify-content: center; padding: 0.75rem;">
-          <span>🔗 Copy Link người ấy</span>
+          <span>💌 Sao chép & Lưu thiệp</span>
         </button>
+      </div>
+
+      <!-- 5. Danh sách các thiệp bạn đã tạo -->
+      <div class="config-group" id="saved-cards-section" style="margin-top: 1.3rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+        <label class="config-label" style="display: flex; justify-content: space-between; align-items: center;">
+          <span>💌 Danh sách thiệp đã tạo (<span id="saved-cards-count">0</span>):</span>
+          <button id="clear-saved-cards-btn" type="button" style="background: none; border: none; color: #a69ebd; font-size: 0.72rem; cursor: pointer; text-decoration: underline;">Xóa tất cả</button>
+        </label>
+        <div id="saved-cards-list" style="max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
+          <!-- Dynamically populated from localStorage -->
+        </div>
       </div>
     </div>
   </div>
@@ -1971,6 +2004,10 @@
     openConfigBtn.addEventListener('click', () => {
       cfgRecipientInput.value = state.recipient;
       cfgWishesInput.value = state.wishes;
+      const cfgFlower = document.getElementById('cfg-flower-input');
+      if (cfgFlower) cfgFlower.value = state.flowerModel;
+      updateLiveShareLink();
+      renderSavedCards();
       configModal.classList.add('open');
     });
 
@@ -1995,9 +2032,196 @@
         const preset = chip.dataset.preset;
         if (PRESET_WISHES[preset]) {
           cfgWishesInput.value = PRESET_WISHES[preset];
+          state.wishes = PRESET_WISHES[preset];
+          updateLiveShareLink();
         }
       });
     });
+
+    // Helper to safely copy text across all mobile & desktop browsers
+    function copyTextToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        return new Promise((resolve, reject) => {
+          document.execCommand('copy') ? resolve() : reject();
+          textArea.remove();
+        });
+      }
+    }
+
+    function calculateCurrentShareURL() {
+      const recipient = (cfgRecipientInput.value || '').trim() || 'Người phụ nữ tuyệt vời';
+      const wishes = (cfgWishesInput.value || '').trim() || PRESET_WISHES.lover;
+      const cfgFlower = document.getElementById('cfg-flower-input');
+      const flower = cfgFlower ? cfgFlower.value : 'user_lily_bouquet';
+
+      let basePath = window.location.pathname.replace(/\/(studio|index)\.html.*$/i, '/');
+      if (!basePath.endsWith('/')) basePath += '/';
+      const url = new URL(basePath, window.location.origin);
+      url.searchParams.set('to', recipient);
+      url.searchParams.set('view', 'gift');
+      if (wishes && wishes !== PRESET_WISHES.lover) {
+        url.searchParams.set('msg', wishes);
+      }
+      if (flower && flower !== 'user_lily_bouquet') {
+        url.searchParams.set('flower', flower);
+      }
+      return url.toString();
+    }
+
+    function updateLiveShareLink() {
+      const shareUrl = calculateCurrentShareURL();
+      const inputEl = document.getElementById('live-share-url-input');
+      const previewEl = document.getElementById('preview-tab-link');
+      if (inputEl) inputEl.value = shareUrl;
+      if (previewEl) previewEl.href = shareUrl;
+    }
+
+    // LocalStorage manager for cards
+    const STORAGE_KEY = 'flower_20_10_saved_cards';
+
+    function getSavedCards() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveCurrentCard() {
+      const recipient = (cfgRecipientInput.value || '').trim() || 'Người phụ nữ tuyệt vời';
+      const wishes = (cfgWishesInput.value || '').trim() || PRESET_WISHES.lover;
+      const cfgFlower = document.getElementById('cfg-flower-input');
+      const flower = cfgFlower ? cfgFlower.value : 'user_lily_bouquet';
+      const shareUrl = calculateCurrentShareURL();
+
+      let cards = getSavedCards();
+      cards = cards.filter(c => c.recipient.toLowerCase() !== recipient.toLowerCase());
+      cards.unshift({
+        recipient,
+        wishes,
+        flowerModel: flower,
+        url: shareUrl,
+        time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+      });
+      if (cards.length > 20) cards = cards.slice(0, 20);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+      } catch (e) {}
+      renderSavedCards();
+    }
+
+    function renderSavedCards() {
+      const container = document.getElementById('saved-cards-list');
+      const countEl = document.getElementById('saved-cards-count');
+      if (!container) return;
+      const cards = getSavedCards();
+      if (countEl) countEl.textContent = cards.length;
+
+      if (cards.length === 0) {
+        container.innerHTML = `<div style="font-size: 0.78rem; color: #887d9c; font-style: italic; padding: 4px 0;">Chưa có thiệp nào. Nhập tên và bấm Copy Link để lưu vào đây!</div>`;
+        return;
+      }
+
+      container.innerHTML = cards.map((c, idx) => `
+        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 10px; font-size: 0.8rem; gap: 8px;">
+          <div style="cursor: pointer; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="window.loadSavedCard(${idx})">
+            <strong style="color: #ffd166;">💐 ${escapeHtml(c.recipient)}</strong>
+            <span style="color: #a69ebd; font-size: 0.72rem; margin-left: 4px;">(${c.flowerModel === 'flowers_bouquet' ? 'Hoa đa sắc' : 'Hoa ly'})</span>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <button class="pill-btn primary" type="button" style="padding: 3px 8px; font-size: 0.72rem;" onclick="window.copySavedCardLink(${idx})">Copy Link</button>
+            <button type="button" style="background: none; border: none; color: #ff6b98; cursor: pointer; font-size: 1rem; padding: 0 4px;" onclick="window.deleteSavedCard(${idx})" title="Xoá thiệp này">&times;</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    window.loadSavedCard = function(idx) {
+      const cards = getSavedCards();
+      const card = cards[idx];
+      if (!card) return;
+      cfgRecipientInput.value = card.recipient;
+      cfgWishesInput.value = card.wishes;
+      const cfgFlower = document.getElementById('cfg-flower-input');
+      if (cfgFlower) cfgFlower.value = card.flowerModel;
+      state.recipient = card.recipient;
+      state.wishes = card.wishes;
+      state.flowerModel = card.flowerModel;
+      updateLiveShareLink();
+      showToast(`Đã chọn thiệp gửi tặng ${card.recipient} ✨`);
+    };
+
+    window.copySavedCardLink = function(idx) {
+      const cards = getSavedCards();
+      const card = cards[idx];
+      if (!card) return;
+      copyTextToClipboard(card.url).then(() => {
+        showToast(`Đã copy link gửi tặng ${card.recipient}! 💌`);
+      });
+    };
+
+    window.deleteSavedCard = function(idx) {
+      let cards = getSavedCards();
+      cards.splice(idx, 1);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+      } catch (e) {}
+      renderSavedCards();
+    };
+
+    document.getElementById('clear-saved-cards-btn')?.addEventListener('click', () => {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+      renderSavedCards();
+      showToast('Đã xóa danh sách thiệp đã lưu');
+    });
+
+    // Real-time link updates on inputs
+    cfgRecipientInput.addEventListener('input', () => {
+      state.recipient = cfgRecipientInput.value.trim() || 'Người phụ nữ tuyệt vời';
+      updateLiveShareLink();
+    });
+    cfgWishesInput.addEventListener('input', () => {
+      state.wishes = cfgWishesInput.value.trim() || PRESET_WISHES.lover;
+      updateLiveShareLink();
+    });
+    document.getElementById('cfg-flower-input')?.addEventListener('change', (e) => {
+      state.flowerModel = e.target.value;
+      updateLiveShareLink();
+    });
+
+    function handleCardCopy() {
+      state.recipient = cfgRecipientInput.value.trim() || "Người phụ nữ tuyệt vời";
+      state.wishes = cfgWishesInput.value.trim() || PRESET_WISHES.lover;
+      const cfgFlower = document.getElementById('cfg-flower-input');
+      if (cfgFlower) state.flowerModel = cfgFlower.value;
+
+      const shareUrl = calculateCurrentShareURL();
+      saveCurrentCard();
+      copyTextToClipboard(shareUrl).then(() => {
+        showToast(`Đã copy link gửi tặng ${state.recipient}! Gửi link này cho người ấy nhé 💌`);
+      }).catch(() => {
+        showToast(`Đã tạo link thiệp gửi tặng ${state.recipient}!`);
+      });
+    }
+
+    copyCardLinkBtn.addEventListener('click', handleCardCopy);
+    document.getElementById('copy-live-link-btn')?.addEventListener('click', handleCardCopy);
+    shareLinkBtn.addEventListener('click', handleCardCopy);
 
     saveAndPreviewBtn.addEventListener('click', () => {
       state.recipient = cfgRecipientInput.value.trim() || "Người phụ nữ tuyệt vời";
@@ -2008,42 +2232,10 @@
         if (window.switch3DFlower) window.switch3DFlower(state.flowerModel);
       }
       applyStateToUI();
+      saveCurrentCard();
       configModal.classList.remove('open');
       envelopeScreen.classList.remove('opened');
-      showToast('Đang ở chế độ xem trước thiệp gửi tặng! ✨');
-    });
-
-    function getShareableURL() {
-      // Link chia sẻ luôn trỏ về trang gốc sạch, loại bỏ hoàn toàn studio.html hoặc tham số edit
-      const basePath = window.location.pathname.replace(/studio\.html.*/, '');
-      const url = new URL(window.location.origin + basePath);
-      url.searchParams.set('to', state.recipient);
-      // Chỉ gắn msg nếu người dùng đã tùy biến khác câu mặc định để link ngắn gọn và đẹp mắt
-      if (state.wishes && state.wishes !== PRESET_WISHES.lover) {
-        url.searchParams.set('msg', state.wishes);
-      }
-      if (state.flowerModel && state.flowerModel !== 'user_lily_bouquet') {
-        url.searchParams.set('flower', state.flowerModel);
-      }
-      return url.toString();
-    }
-
-    function copyShareLink() {
-      const shareUrl = getShareableURL();
-      navigator.clipboard.writeText(shareUrl).then(() => {
-        showToast('Đã copy Link quà tặng! Gửi link này cho người ấy nhé 💌');
-      }).catch(() => {
-        showToast('Đã tạo link thiệp chúc mừng!');
-      });
-    }
-
-    copyCardLinkBtn.addEventListener('click', copyShareLink);
-    shareLinkBtn.addEventListener('click', () => {
-      state.recipient = cfgRecipientInput.value.trim() || state.recipient;
-      state.wishes = cfgWishesInput.value.trim() || state.wishes;
-      const cfgFlower = document.getElementById('cfg-flower-input');
-      if (cfgFlower) state.flowerModel = cfgFlower.value;
-      copyShareLink();
+      showToast(`Đang xem trước thiệp gửi tặng ${state.recipient}! ✨`);
     });
 
     /* ==========================================================
@@ -2074,6 +2266,8 @@
         shareLinkBtn.style.display = 'inline-flex';
         // Mở sẵn phong bì để bạn thấy ngay bó hoa và thiệp để tinh chỉnh
         envelopeScreen.classList.add('opened');
+        updateLiveShareLink();
+        renderSavedCards();
         if (params.get('studio') === 'open' || params.has('config') || params.has('edit')) {
           configModal.classList.add('open');
         }
